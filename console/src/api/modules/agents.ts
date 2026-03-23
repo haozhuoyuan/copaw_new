@@ -4,6 +4,8 @@ import type {
   AgentProfileConfig,
   CreateAgentRequest,
   AgentProfileRef,
+  CreateAgentFromTextRequest,
+  CreateAgentFromTextResponse,
 } from "../types/agents";
 import type { MdFileInfo, MdFileContent } from "../types/workspace";
 
@@ -21,6 +23,13 @@ export const agentsApi = {
     request<AgentProfileRef>("/agents", {
       method: "POST",
       body: JSON.stringify(agent),
+    }),
+
+  // Create agent from natural language description
+  createAgentFromText: (data: CreateAgentFromTextRequest) =>
+    request<CreateAgentFromTextResponse>("/agents/create-from-text", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 
   // Update agent configuration

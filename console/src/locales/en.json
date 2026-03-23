@@ -141,6 +141,16 @@
     "defaultNotEditable": "Default agent cannot be edited",
     "defaultNotDeletable": "Default agent cannot be deleted"
   },
+  "agentCreator": {
+    "title": "Create via Text",
+    "modalTitle": "Create Agent from Description",
+    "describeAgent": "Describe the agent you want",
+    "placeholder": "E.g., Create a coding assistant specializing in Python and JavaScript development",
+    "quickSuggestions": "Quick suggestions:",
+    "descriptionRequired": "Please enter an agent description",
+    "createFailed": "Failed to create agent",
+    "infoText": "Just describe in natural language, and the system will automatically generate the agent's name, identity, style, and capability configuration for you."
+  },
   "skills": {
     "title": "Skills",
     "description": "Manage agent skills and capabilities.",

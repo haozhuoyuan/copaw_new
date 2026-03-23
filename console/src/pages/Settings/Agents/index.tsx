@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { Card, Button, Form, message } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Card, Button, Form, message, Space } from "antd";
+import { PlusOutlined, StarOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { agentsApi } from "../../../api/modules/agents";
 import type { AgentSummary } from "../../../api/types/agents";
 import { useAgents } from "./useAgents";
 import { PageHeader, AgentTable, AgentModal } from "./components";
+import AgentCreatorModal from "./components/AgentCreatorModal";
 import styles from "./index.module.less";
 
 export default function AgentsPage() {
   const { t } = useTranslation();
-  const { agents, loading, deleteAgent } = useAgents();
+  const { agents, loading, deleteAgent, refreshAgents } = useAgents();
   const [modalVisible, setModalVisible] = useState(false);
+  const [creatorModalVisible, setCreatorModalVisible] = useState(false);
   const [editingAgent, setEditingAgent] = useState<AgentSummary | null>(null);
   const [form] = Form.useForm();
 
@@ -22,6 +24,11 @@ export default function AgentsPage() {
       workspace_dir: "",
     });
     setModalVisible(true);
+  };
+
+  const handleCreatorSuccess = () => {
+    refreshAgents();
+    setCreatorModalVisible(false);
   };
 
   const handleEdit = async (agent: AgentSummary) => {
@@ -70,9 +77,17 @@ export default function AgentsPage() {
         title={t("agent.management")}
         description={t("agent.pageDescription")}
         action={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            {t("agent.create")}
-          </Button>
+          <Space>
+            <Button
+              icon={<StarOutlined />}
+              onClick={() => setCreatorModalVisible(true)}
+            >
+              {t("agentCreator.title")}
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              {t("agent.create")}
+            </Button>
+          </Space>
         }
       />
 
@@ -91,6 +106,12 @@ export default function AgentsPage() {
         form={form}
         onSave={handleSubmit}
         onCancel={() => setModalVisible(false)}
+      />
+
+      <AgentCreatorModal
+        open={creatorModalVisible}
+        onSuccess={handleCreatorSuccess}
+        onCancel={() => setCreatorModalVisible(false)}
       />
     </div>
   );

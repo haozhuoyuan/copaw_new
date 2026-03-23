@@ -2,6 +2,7 @@ import { Layout, Space } from "antd";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import ThemeToggleButton from "../components/ThemeToggleButton";
 import AgentSelector from "../components/AgentSelector";
+import AgentCreator from "../components/AgentCreator";
 import { useTranslation } from "react-i18next";
 import {
   FileTextOutlined,
@@ -39,6 +40,13 @@ export default function Header({ selectedKey }: HeaderProps) {
     }
   };
 
+  // Handler to refresh agent list after creation
+  const handleAgentCreated = () => {
+    // The AgentSelector will automatically refresh when it regains focus
+    // or when the user interacts with it
+    window.dispatchEvent(new CustomEvent("agentCreated"));
+  };
+
   return (
     <AntHeader className={styles.header}>
       <span className={styles.headerTitle}>
@@ -46,6 +54,7 @@ export default function Header({ selectedKey }: HeaderProps) {
       </span>
       <Space size="middle">
         <AgentSelector />
+        <AgentCreator onSuccess={handleAgentCreated} />
         <Tooltip title={t("header.changelog")}>
           <Button
             icon={<FileTextOutlined />}

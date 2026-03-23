@@ -107,6 +107,16 @@
     "defaultNotEditable": "默认智能体不允许编辑",
     "defaultNotDeletable": "默认智能体不允许删除"
   },
+  "agentCreator": {
+    "title": "一句话创建",
+    "modalTitle": "一句话创建智能体",
+    "describeAgent": "描述你想要的智能体",
+    "placeholder": "例如：创建一个代码书写智能体，擅长Python和JavaScript开发",
+    "quickSuggestions": "快速建议：",
+    "descriptionRequired": "请输入智能体描述",
+    "createFailed": "创建智能体失败",
+    "infoText": "只需用自然语言描述，系统将自动为你生成智能体的名称、身份、风格和能力配置。"
+  },
   "skills": {
     "title": "技能",
     "description": "管理智能体技能和能力。",

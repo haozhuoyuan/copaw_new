@@ -14,6 +14,17 @@ export default function AgentSelector() {
 
   useEffect(() => {
     loadAgents();
+    
+    // Listen for agent creation events to refresh the list
+    const handleAgentCreated = () => {
+      loadAgents();
+    };
+    
+    window.addEventListener("agentCreated", handleAgentCreated);
+    
+    return () => {
+      window.removeEventListener("agentCreated", handleAgentCreated);
+    };
   }, []);
 
   const loadAgents = async () => {

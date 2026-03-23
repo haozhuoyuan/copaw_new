@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from fastapi import APIRouter, Body, HTTPException, Request
 from fastapi import Path as PathParam
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ...config.config import (
     AgentProfileConfig,
@@ -20,6 +20,11 @@ from ...config.config import (
 )
 from ...config.utils import load_config, save_config
 from ...agents.memory.agent_md_manager import AgentMdManager
+from ...agents.agent_creator import (
+    parse_agent_creation_request,
+    generate_profile_md,
+    generate_soul_md,
+)
 from ..multi_agent_manager import MultiAgentManager
 from ...constant import WORKING_DIR
 
@@ -66,6 +71,31 @@ class MdFileContent(BaseModel):
     """Markdown file content."""
 
     content: str
+
+
+class CreateAgentFromTextRequest(BaseModel):
+    """Request model for creating agent from natural language description."""
+
+    description: str = Field(
+        ...,
+        description="Natural language description of the agent to create",
+        examples=["创建一个代码书写智能体", "create a coding assistant"],
+    )
+    language: str = Field(
+        default="zh",
+        description="Language for the agent (zh/en)",
+    )
+
+
+class CreateAgentFromTextResponse(BaseModel):
+    """Response model for agent creation from text."""
+
+    agent_id: str
+    name: str
+    description: str
+    workspace_dir: str
+    generated_config: dict
+    message: str
 
 
 def _get_multi_agent_manager(request: Request) -> MultiAgentManager:
@@ -207,6 +237,133 @@ async def create_agent(
     logger.info(f"Created new agent: {new_id} (name={request.name})")
 
     return agent_ref
+
+
+@router.post(
+    "/create-from-text",
+    response_model=CreateAgentFromTextResponse,
+    status_code=201,
+    summary="Create agent from natural language description",
+    description="Create a new agent by describing it in natural language",
+)
+async def create_agent_from_text(
+    request: CreateAgentFromTextRequest = Body(...),
+) -> CreateAgentFromTextResponse:
+    """Create a new agent from natural language description.
+    
+    This endpoint parses the user's natural language description and automatically
+generates agent configuration including customized PROFILE.md and SOUL.md files.
+    """
+    config = load_config()
+
+    # Generate unique agent ID
+    max_attempts = 10
+    new_id = None
+    for _ in range(max_attempts):
+        candidate_id = generate_short_agent_id()
+        if candidate_id not in config.agents.profiles:
+            new_id = candidate_id
+            break
+
+    if new_id is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate unique agent ID after 10 attempts",
+        )
+
+    # Parse the natural language description
+    try:
+        parsed_config = parse_agent_creation_request(
+            description=request.description,
+            model=None,  # Use basic parsing for now
+        )
+    except Exception as e:
+        logger.warning(f"Failed to parse agent description: {e}")
+        # Fallback: use description as name
+        has_chinese = any("\u4e00" <= char <= "\u9fff" for char in request.description)
+        parsed_config = {
+            "name": request.description[:30] if has_chinese else request.description.title()[:30],
+            "description": request.description,
+            "identity": "智能助手" if has_chinese else "Intelligent Assistant",
+            "style": "专业、友好" if has_chinese else "Professional, friendly",
+            "capabilities": ["问题解答", "任务协助"] if has_chinese else ["Question answering", "Task assistance"],
+        }
+
+    # Create workspace directory
+    workspace_dir = Path(f"{WORKING_DIR}/workspaces/{new_id}").expanduser()
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+
+    # Build agent config
+    from ...config.config import (
+        ChannelConfig,
+        MCPConfig,
+        HeartbeatConfig,
+        ToolsConfig,
+    )
+
+    agent_config = AgentProfileConfig(
+        id=new_id,
+        name=parsed_config["name"],
+        description=parsed_config["description"],
+        workspace_dir=str(workspace_dir),
+        language=request.language,
+        channels=ChannelConfig(),
+        mcp=MCPConfig(),
+        heartbeat=HeartbeatConfig(),
+        tools=ToolsConfig(),
+    )
+
+    # Initialize workspace with default files
+    _initialize_agent_workspace(workspace_dir, agent_config)
+
+    # Generate and write customized markdown files
+    try:
+        # Generate PROFILE.md
+        profile_content = generate_profile_md(parsed_config, request.language)
+        profile_path = workspace_dir / "PROFILE.md"
+        profile_path.write_text(profile_content, encoding="utf-8")
+        logger.debug(f"Generated PROFILE.md for agent {new_id}")
+
+        # Generate SOUL.md
+        soul_content = generate_soul_md(parsed_config, request.language)
+        soul_path = workspace_dir / "SOUL.md"
+        soul_path.write_text(soul_content, encoding="utf-8")
+        logger.debug(f"Generated SOUL.md for agent {new_id}")
+    except Exception as e:
+        logger.warning(f"Failed to generate custom markdown files: {e}")
+        # Continue even if custom file generation fails
+
+    # Save agent configuration
+    agent_ref = AgentProfileRef(
+        id=new_id,
+        workspace_dir=str(workspace_dir),
+    )
+
+    # Add to root config
+    config.agents.profiles[new_id] = agent_ref
+    save_config(config)
+
+    # Save agent config to workspace
+    save_agent_config(new_id, agent_config)
+
+    logger.info(
+        f"Created new agent from text: {new_id} (name={parsed_config['name']})"
+    )
+
+    # Determine success message based on language
+    if request.language == "zh":
+        message = f"成功创建智能体「{parsed_config['name']}」(ID: {new_id})"
+    else:
+        message = f"Successfully created agent '{parsed_config['name']}' (ID: {new_id})"
+
+    return CreateAgentFromTextResponse(
+        agent_id=new_id,
+        name=parsed_config["name"],
+        description=parsed_config["description"],
+        workspace_dir=str(workspace_dir),
+        generated_config=parsed_config,
+        message=message,
+    )
 
 
 @router.put(

@@ -10,6 +10,7 @@ interface UseAgentsReturn {
   loading: boolean;
   error: Error | null;
   loadAgents: () => Promise<void>;
+  refreshAgents: () => Promise<void>;
   deleteAgent: (agentId: string) => Promise<void>;
 }
 
@@ -58,6 +59,7 @@ export function useAgents(): UseAgentsReturn {
     loading,
     error,
     loadAgents,
+    refreshAgents: loadAgents,
     deleteAgent,
   };
 }

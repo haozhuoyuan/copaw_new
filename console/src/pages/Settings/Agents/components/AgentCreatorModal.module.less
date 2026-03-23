@@ -1,0 +1,73 @@
+.creatorContent {
+  padding: 8px 0;
+}
+
+.inputSection {
+  margin-bottom: 20px;
+  
+  :global {
+    .ant-typography {
+      display: block;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.descriptionInput {
+  resize: none;
+  
+  &::placeholder {
+    color: var(--ant-color-text-quaternary);
+  }
+}
+
+.suggestionsSection {
+  margin-bottom: 20px;
+}
+
+.suggestionsLabel {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.suggestionTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: var(--ant-color-primary);
+    border-color: var(--ant-color-primary);
+    background: var(--ant-color-primary-bg);
+  }
+  
+  svg {
+    opacity: 0.6;
+  }
+}
+
+.infoBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--ant-color-info-bg);
+  border-radius: 8px;
+  border: 1px solid var(--ant-color-info-border);
+  
+  svg {
+    color: var(--ant-color-info);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
+.infoText {
+  font-size: 13px;
+  line-height: 1.5;
+}
